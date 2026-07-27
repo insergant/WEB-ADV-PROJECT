@@ -56,6 +56,55 @@ app.post('/api/login', (req, res) => {
     });
   });
 });
+ 
+
+// Google Login / Upsert Route
+app.post('/api/google-login', (req, res) => {
+  const { firstName, lastName, email } = req.body;
+  const dummyPassword = 'GOOGLE_OAUTH_LOGIN';
+
+  // Check if user already exists in the database
+  const checkQuery = 'SELECT * FROM users WHERE email = ?';
+  db.query(checkQuery, [email], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Database error during Google login.' });
+    }
+
+    if (results.length > 0) {
+      // User exists, return user session data
+      res.status(200).json({
+        message: 'Google login successful!',
+        user: {
+          id: results[0].id,
+          firstName: results[0].first_name,
+          lastName: results[0].last_name,
+          email: results[0].email,
+          role: results[0].role
+        }
+      });
+    } else {
+      // User does not exist, insert them into the database automatically
+      const insertQuery = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
+      db.query(insertQuery, [firstName, lastName, email, dummyPassword, 'scout'], (err, result) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).json({ error: 'Failed to register Google user.' });
+        }
+        res.status(201).json({
+          message: 'Google user registered successfully!',
+          user: {
+            id: result.insertId,
+            firstName,
+            lastName,
+            email,
+            role: 'scout'
+          }
+        });
+      });
+    }
+  });
+});
 
 // 1. READ: Get all events
 app.get('/api/events', (req, res) => {
