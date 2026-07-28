@@ -4,27 +4,47 @@ const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// --- ROUTES ---
+
+// Health Check
 app.get('/', (req, res) => {
   res.send('ScoutConnect Backend API is running...');
 });
 
+// 1. REGISTER: Create a new user
 app.post('/api/signup', (req, res) => {
-  const { firstName, lastName, email,phonenumber, password, role } = req.body;
+  const { firstName, lastName, email, phoneNumber, password, role } = req.body;
   
-  const query = 'INSERT INTO users (first_name, last_name, email,phonenumber, password, role) VALUES (?, ?,?, ?, ?, ?)';
+  // Validation checks
+  if (!phoneNumber || phoneNumber.length !== 8) {
+    return res.status(400).json({ error: 'Phone number must be exactly 8 digits.' });
+  }
+  if (password.length < 8 || !/\d/.test(password)) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long and include at least one number.' });
+  }
+
+  // Assuming DB column is exactly 'phonenumber' (no underscore) based on your query
+  const query = 'INSERT INTO users (first_name, last_name, email, phonenumber, password, role) VALUES (?, ?, ?, ?, ?, ?)';
   
-  db.query(query, [firstName, lastName, email,phonenumber, password, role], (err, result) => {
+  db.query(query, [firstName, lastName, email, phoneNumber, password, role], (err, result) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ error: 'Database error or email already exists.' });
+      // Smart Error Checking: Detect if the email is already in the database
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'An account with this email already exists.' });
+      }
+      return res.status(500).json({ error: 'Internal database error.' });
     }
     res.status(201).json({ message: 'User registered successfully!', userId: result.insertId });
   });
 });
-// User Login Route
+
+// 2. LOGIN: Authenticate standard user
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -40,27 +60,26 @@ app.post('/api/login', (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    const user = results[0];
     res.status(200).json({ 
       message: 'Login successful!', 
       user: {
-        id: results[0].id,
-        firstName: results[0].first_name,
-        lastName: results[0].last_name,
-        email: results[0].email,
-        phonenumber:results[0].phonenumber,
-        role: results[0].role
+        id: user.id,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        email: user.email,
+        phoneNumber: user.phonenumber, // Fixed inconsistency here
+        role: user.role
       } 
     });
   });
 });
- 
 
-// Google Login / Upsert Route
+// 3. GOOGLE LOGIN: Authenticate or Upsert Google user
 app.post('/api/google-login', (req, res) => {
   const { firstName, lastName, email } = req.body;
   const dummyPassword = 'GOOGLE_OAUTH_LOGIN';
 
-  // Check if user already exists in the database
   const checkQuery = 'SELECT * FROM users WHERE email = ?';
   db.query(checkQuery, [email], (err, results) => {
     if (err) {
@@ -70,41 +89,45 @@ app.post('/api/google-login', (req, res) => {
 
     if (results.length > 0) {
       // User exists, return user session data
-      res.status(200).json({
+      const user = results[0];
+      return res.status(200).json({
         message: 'Google login successful!',
         user: {
-          id: results[0].id,
-          firstName: results[0].first_name,
-          lastName: results[0].last_name,
-          email: results[0].email,
-          phonenumber:results[0].phonenumber,
-          role: results[0].role
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          phoneNumber: user.phonenumber, // Fixed inconsistency here
+          role: user.role
         }
       });
-    } else {
-      // User does not exist, insert them into the database automatically
-      const insertQuery = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
-      db.query(insertQuery, [firstName, lastName, email,phonenumber, dummyPassword, 'scout'], (err, result) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({ error: 'Failed to register Google user.' });
+    } 
+    
+    // User does not exist, create them
+    const insertQuery = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
+    db.query(insertQuery, [firstName, lastName, email, dummyPassword, 'scout'], (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to register Google user.' });
+      }
+      res.status(201).json({
+        message: 'Google user registered successfully!',
+        user: {
+          id: result.insertId,
+          firstName,
+          lastName,
+          email,
+          phoneNumber: null, // Google doesn't provide this, so we default to null
+          role: 'scout'
         }
-        res.status(201).json({
-          message: 'Google user registered successfully!',
-          user: {
-            id: result.insertId,
-            firstName,
-            lastName,
-            email,
-            role: 'scout'
-          }
-        });
       });
-    }
+    });
   });
 });
 
-// 1. READ: Get all events
+// --- EVENT ROUTES ---
+
+// 4. READ: Get all events
 app.get('/api/events', (req, res) => {
   db.query('SELECT * FROM events', (err, results) => {
     if (err) {
@@ -115,7 +138,7 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-// 2. CREATE: Add a new event
+// 5. CREATE: Add a new event
 app.post('/api/events', (req, res) => {
   const { title, description, eventDate, location } = req.body;
   const query = 'INSERT INTO events (title, description, event_date, location) VALUES (?, ?, ?, ?)';
@@ -129,7 +152,7 @@ app.post('/api/events', (req, res) => {
   });
 });
 
-// 3. DELETE: Remove an event
+// 6. DELETE: Remove an event
 app.delete('/api/events/:id', (req, res) => {
   const eventId = req.params.id;
   db.query('DELETE FROM events WHERE id = ?', [eventId], (err, result) => {
@@ -141,7 +164,7 @@ app.delete('/api/events/:id', (req, res) => {
   });
 });
 
-// Start Server
+// --- START SERVER ---
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
