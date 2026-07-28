@@ -4,23 +4,19 @@ const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Test Route
 app.get('/', (req, res) => {
   res.send('ScoutConnect Backend API is running...');
 });
 
-// TODO: User Signup Route (CRUD - Create)
 app.post('/api/signup', (req, res) => {
-  const { firstName, lastName, email, password, role } = req.body;
+  const { firstName, lastName, email,phonenumber, password, role } = req.body;
   
-  const query = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
+  const query = 'INSERT INTO users (first_name, last_name, email,phonenumber, password, role) VALUES (?, ?,?, ?, ?, ?)';
   
-  db.query(query, [firstName, lastName, email, password, role], (err, result) => {
+  db.query(query, [firstName, lastName, email,phonenumber, password, role], (err, result) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: 'Database error or email already exists.' });
@@ -51,6 +47,7 @@ app.post('/api/login', (req, res) => {
         firstName: results[0].first_name,
         lastName: results[0].last_name,
         email: results[0].email,
+        phonenumber:results[0].phonenumber,
         role: results[0].role
       } 
     });
@@ -80,13 +77,14 @@ app.post('/api/google-login', (req, res) => {
           firstName: results[0].first_name,
           lastName: results[0].last_name,
           email: results[0].email,
+          phonenumber:results[0].phonenumber,
           role: results[0].role
         }
       });
     } else {
       // User does not exist, insert them into the database automatically
       const insertQuery = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
-      db.query(insertQuery, [firstName, lastName, email, dummyPassword, 'scout'], (err, result) => {
+      db.query(insertQuery, [firstName, lastName, email,phonenumber, dummyPassword, 'scout'], (err, result) => {
         if (err) {
           console.error(err);
           return res.status(500).json({ error: 'Failed to register Google user.' });

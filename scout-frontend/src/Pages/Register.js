@@ -7,6 +7,7 @@ const Register = () => {
     firstName: '',
     lastName: '',
     email: '',
+    phonenumber:Int32Array,
     password: '',
     role: 'scout'
   });
@@ -92,6 +93,17 @@ const Register = () => {
             onChange={handleChange}
             className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
             required 
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+          <input
+            type="integer"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
+            className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+            required
           />
         </div>
 

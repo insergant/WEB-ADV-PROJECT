@@ -12,7 +12,6 @@ const Services = () => {
   const [dbEvents, setDbEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch live events from your Node.js / XAMPP MySQL database
   useEffect(() => {
     fetch('http://localhost:5000/api/events')
       .then((res) => res.json())
@@ -26,14 +25,12 @@ const Services = () => {
       });
   }, []);
 
-  // Dynamically filter programs based on state
   const filteredPrograms = filter === 'all' 
     ? scoutPrograms 
     : scoutPrograms.filter(program => program.category === filter);
 
   return (
     <div className="space-y-12 max-w-6xl mx-auto py-6">
-      {/* Section 1: Programs & Dynamic Filtering (Phase 1) */}
       <div className="space-y-6">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold text-emerald-900">Scout Programs & Activities</h2>
@@ -41,7 +38,6 @@ const Services = () => {
             Explore our tailored programs designed for every stage of a scout's journey. Use the filter below to find the right track.
           </p>
 
-          {/* Dynamic Filter Buttons */}
           <div className="flex justify-center space-x-2 pt-4">
             <button 
               onClick={() => setFilter('all')} 
@@ -69,8 +65,6 @@ const Services = () => {
             </button>
           </div>
         </div>
-
-        {/* Dynamic Grid Rendering for Programs */}
         <div className="grid md:grid-cols-2 gap-6">
           {filteredPrograms.map((program) => (
             <div key={program.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between transition transform hover:-translate-y-1">
@@ -93,18 +87,16 @@ const Services = () => {
 
       <hr className="border-slate-200" />
 
-      {/* Section 2: Live Database Events (Phase 2 Backend Integration) */}
       <div className="space-y-6">
         <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-emerald-900">Live Database Events</h2>
-          <p className="text-slate-600">Upcoming camps and meetings fetched directly from your MySQL database.</p>
+          <h2 className="text-3xl font-bold text-emerald-900">Upcoming Events</h2>
         </div>
 
         {loading ? (
           <p className="text-center text-slate-500">Connecting to database server...</p>
         ) : dbEvents.length === 0 ? (
           <div className="text-center bg-slate-100 p-6 rounded-lg text-slate-600">
-            No events found in the database. You can add some via your MySQL server or backend API!
+            No upcoming events found. Please check back later or contact us for more information.
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
