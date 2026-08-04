@@ -4,13 +4,16 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { LanguageProvider } from './Components/LanguageContext';
 const GOOGLE_CLIENT_ID = "309540741052-te1esc6uftf7gg0m4irse71e1b7vejtc.apps.googleusercontent.com";
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
+    <LanguageProvider>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <App />
     </GoogleOAuthProvider>
+    </LanguageProvider>
   </React.StrictMode>
 );
 

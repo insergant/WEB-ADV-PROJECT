@@ -7,7 +7,7 @@ const Footer = () => {
         <a href="https://www.facebook.com/muslimscoutma" target="_blank" rel="noopener noreferrer" className="hover:text-white text-2xl transition">
           <FaFacebook />
         </a>
-        <a href="https://www.facebook.com/muslimscoutma" target="_blank" rel="noopener noreferrer" className="hover:text-white text-2xl transition">
+        <a href="https://www.instagram.com/muslimscoutma" target="_blank" rel="noopener noreferrer" className="hover:text-white text-2xl transition">
           <FaInstagram />
         </a>
         <a 

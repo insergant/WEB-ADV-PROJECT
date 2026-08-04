@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 const scoutPrograms = [
   { id: 1, name: 'Cub Scouts', age: 'Ages 7-10', description: 'Focuses on family, citizenship, personal fitness, and fun introductory outdoor activities.', category: 'junior' },
@@ -13,10 +14,10 @@ const Services = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/events')
+    fetch(`${API_BASE_URL}/api/events`)
       .then((res) => res.json())
       .then((data) => {
-        setDbEvents(data);
+        setDbEvents(data);  
         setLoading(false);
       })
       .catch((err) => {
@@ -28,7 +29,7 @@ const Services = () => {
   const filteredPrograms = filter === 'all' 
     ? scoutPrograms 
     : scoutPrograms.filter(program => program.category === filter);
-
+const safeEvents = Array.isArray(dbEvents) ? dbEvents : [];
   return (
     <div className="space-y-12 max-w-6xl mx-auto py-6">
       <div className="space-y-6">
@@ -100,16 +101,16 @@ const Services = () => {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
-            {dbEvents.map((event) => (
-              <div key={event.id} className="bg-emerald-50 p-6 rounded-xl border border-emerald-200 shadow-sm space-y-3">
-                <span className="text-xs font-semibold bg-emerald-800 text-white px-3 py-1 rounded-full">
-                  {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'TBA'}
-                </span>
-                <h3 className="text-xl font-bold text-emerald-900">{event.title}</h3>
-                <p className="text-slate-700 text-sm">{event.description}</p>
-                <p className="text-xs text-emerald-800 font-semibold">📍 Location: {event.location}</p>
-              </div>
-            ))}
+            {safeEvents.map((event) => (
+  <div key={event.id} className="bg-emerald-50 p-6 rounded-xl border border-emerald-200 shadow-sm space-y-3">
+    <span className="text-xs font-semibold bg-emerald-800 text-white px-3 py-1 rounded-full">
+      {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'TBA'}
+    </span>
+    <h3 className="text-xl font-bold text-emerald-900">{event.title}</h3>
+    <p className="text-slate-700 text-sm">{event.description}</p>
+    <p className="text-xs text-emerald-800 font-semibold">📍 Location: {event.location}</p>
+  </div>
+))}
           </div>
         )}
       </div>

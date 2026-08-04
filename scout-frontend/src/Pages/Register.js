@@ -1,23 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../Components/LanguageContext';
+import { API_BASE_URL } from '../config';
 
 const Register = () => {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    phoneNumber: '', 
+    phoneNumber: '',
     password: '',
     role: 'scout'
   });
 
-  // New UI states for a better user experience
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigate = useNavigate();
+  // Helper for safe translation lookup with fallback text
+  const getText = (key, defaultText) => {
+    if (typeof t === 'function') {
+      const translated = t(key);
+      return translated && translated !== key ? translated : defaultText;
+    }
+    return defaultText;
+  };
 
-  // Route Guard: Redirect to home if already logged in
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -27,43 +37,39 @@ const Register = () => {
 
   const handleChange = (e) => {
     let value = e.target.value;
-    
-    // Automatically strip non-numbers for the phone field
+
     if (e.target.name === 'phoneNumber') {
-      value = value.replace(/\D/g, '');
+      value = value.replace(/\D/g, ''); // Numeric characters only
     }
 
-    // Clear any previous error messages when the user starts typing again
     setErrorMessage('');
-
-    setFormData({
-      ...formData,
+    setFormData((prevData) => ({
+      ...prevData,
       [e.target.name]: value
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage(''); // Reset errors on submit
+    setErrorMessage('');
 
-    // 1. Strict Frontend Validation (using inline errors instead of alerts)
+    // Strict Frontend Validation
     if (formData.phoneNumber.length !== 8) {
-      return setErrorMessage("Phone number must be exactly 8 digits.");
+      return setErrorMessage(getText('errPhoneDigits', 'Phone number must be exactly 8 digits.'));
     }
 
     if (formData.password.length < 8) {
-      return setErrorMessage("Password must be at least 8 characters long.");
+      return setErrorMessage(getText('errPasswordLength', 'Password must be at least 8 characters long.'));
     }
 
     if (!/\d/.test(formData.password)) {
-      return setErrorMessage("Password must contain at least one number.");
+      return setErrorMessage(getText('errPasswordNumber', 'Password must contain at least one number.'));
     }
-    
-    // 2. API Call
-    setIsLoading(true); // Disable the button to prevent double-clicks
-    
+
+    setIsLoading(true);
+
     try {
-      const response = await fetch('http://localhost:5000/api/signup', {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,25 +80,25 @@ const Register = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Account created successfully! You can now log in.');
+        alert(getText('msgAccountSuccess', 'Account created successfully! Please sign in.'));
         navigate('/login');
       } else {
-        // Show backend errors (like duplicate emails) in the UI
-        setErrorMessage(data.error || 'Registration failed. Please try again.');
+        setErrorMessage(data.error || getText('errRegistrationFailed', 'Registration failed. Please try again.'));
       }
     } catch (err) {
       console.error('Network error:', err);
-      setErrorMessage('Could not connect to the server. Please check your internet connection.');
+      setErrorMessage(getText('errNetwork', 'Network error. Please check your server connection.'));
     } finally {
-      setIsLoading(false); // Re-enable the button when finished
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white p-8 border border-slate-200 rounded-lg shadow-sm mt-10">
-      <h2 className="text-3xl font-bold text-emerald-900 mb-6 text-center">Join the Scouts</h2>
-      
-      {/* Conditionally render the error message box if an error exists */}
+    <div className="max-w-md mx-auto bg-white p-8 border border-slate-200 rounded-lg shadow-sm mt-6">
+      <h2 className="text-3xl font-bold text-emerald-900 mb-6 text-center">
+        {getText('joinScouts', 'Join ScoutConnect')}
+      </h2>
+
       {errorMessage && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center">
           {errorMessage}
@@ -100,96 +106,117 @@ const Register = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex space-x-4">
+        <div className="flex gap-4">
           <div className="w-1/2">
-            <label className="block text-sm font-medium text-slate-700">First Name</label>
-            <input 
-              type="text" 
-              name="firstName" 
-              value={formData.firstName} 
-              onChange={handleChange} 
-              required 
-              className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {getText('firstName', 'First Name')}
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+              className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
           <div className="w-1/2">
-            <label className="block text-sm font-medium text-slate-700">Last Name</label>
-            <input 
-              type="text" 
-              name="lastName" 
-              value={formData.lastName} 
-              onChange={handleChange} 
-              required 
-              className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              {getText('lastName', 'Last Name')}
+            </label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+              className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Email Address</label>
-          <input 
-            type="email" 
-            name="email" 
-            value={formData.email} 
-            onChange={handleChange} 
-            required 
-            className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {getText('emailAddress', 'Email Address')}
+          </label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {getText('phoneNumber', 'Phone Number')}
+          </label>
           <input
-            type="tel" 
-            name="phoneNumber" 
-            value={formData.phoneNumber} 
-            onChange={handleChange} 
+            type="tel"
+            name="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={handleChange}
             required
             maxLength="8"
-            className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+            placeholder="8 digits"
+            className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Password</label>
-          <input 
-            type="password" 
-            name="password" 
-            value={formData.password} 
-            onChange={handleChange} 
-            required 
-            className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700">I am registering as a...</label>
-          <select 
-            name="role" 
-            value={formData.role} 
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {getText('password', 'Password')}
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
             onChange={handleChange}
-            className="mt-1 block w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+            required
+            className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            {getText('registeringAs', 'Registering As')}
+          </label>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="w-full p-2 border border-slate-300 rounded focus:ring-emerald-500 focus:border-emerald-500"
           >
-            <option value="scout">Scout</option>
-            <option value="parent">Parent/Guardian</option>
-            <option value="leader">Scout Leader</option>
+            <option value="scout">{getText('roleScout', 'Scout')}</option>
+            <option value="parent">{getText('roleParent', 'Parent')}</option>
           </select>
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isLoading}
-          className={`w-full font-bold py-2 px-4 rounded transition mt-4 text-white 
-            ${isLoading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-700 hover:bg-emerald-800'}`}
+          className={`w-full font-bold py-2 px-4 rounded transition mt-4 text-white ${
+            isLoading
+              ? 'bg-emerald-400 cursor-not-allowed'
+              : 'bg-emerald-700 hover:bg-emerald-800 cursor-pointer'
+          }`}
         >
-          {isLoading ? 'Creating Account...' : 'Create Account'}
+          {isLoading
+            ? getText('creatingAccount', 'Creating Account...')
+            : getText('createAccount', 'Create Account')}
         </button>
       </form>
 
       <div className="mt-4 text-center text-sm text-slate-600">
-        Already have an account? <Link to="/login" className="text-emerald-600 hover:underline font-medium">Log in here</Link>
+        {getText('alreadyHaveAccount', 'Already have an account?')}{' '}
+        <Link to="/login" className="text-emerald-600 hover:underline font-medium ml-1">
+          {getText('loginHere', 'Login here')}
+        </Link>
       </div>
     </div>
   );
 };
+
 export default Register;
